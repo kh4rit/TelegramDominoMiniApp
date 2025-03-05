@@ -26,14 +26,13 @@ async function startLocalServer() {
 async function startNgrokTunnel() {
   try {
     // Kill any existing ngrok processes
-    await ngrok.kill();
+    await ngrok.disconnect();
     
     // Start new tunnel
     const url = await ngrok.connect({
       addr: 3000,
       authtoken: process.env.NGROK_AUTH_TOKEN,
-      proto: 'http',
-      region: 'us'
+      proto: 'http'
     });
     
     console.log('Ngrok tunnel created:', url);
@@ -44,8 +43,7 @@ async function startNgrokTunnel() {
     try {
       const url = await ngrok.connect({
         addr: 3000,
-        proto: 'http',
-        region: 'us'
+        proto: 'http'
       });
       console.log('Ngrok tunnel created (without auth):', url);
       return url;

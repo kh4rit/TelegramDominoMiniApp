@@ -30,6 +30,6 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "undici-types": "^5.0.0",
-    "ngrok": "^5.0.0"
+    "ngrok": "^4.3.1"
   }
 }
