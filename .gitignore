@@ -1,26 +1,29 @@
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Build output
 dist/
-public/client.js
-public/client.js.map
-deploy/
+*.js
+!nodemon.json
 
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*.local
 
-# IDE files
-.idea/
+# IDE
 .vscode/
+.idea/
+*.sublime-*
 *.swp
 *.swo
 
-# OS files
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
 .DS_Store
 Thumbs.db 

@@ -9,7 +9,7 @@
     "app:start": "node dist/server.js",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
-    "bot:dev": "tsc -p tsconfig.json && ts-node src/bot/test.ts",
+    "bot:dev": "tsc -p tsconfig.json && ts-node src/bot/index.ts",
     "bot:build": "tsc -p tsconfig.json",
     "bot:start": "npm run build && node dist/bot/index.js",
     "build": "npm run app:build",
