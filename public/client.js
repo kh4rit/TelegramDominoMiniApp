@@ -80,3 +80,4 @@ document.addEventListener('DOMContentLoaded', () => {
     new DominoGame();
 });
 export {};
+//# sourceMappingURL=client.js.map

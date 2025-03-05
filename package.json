@@ -9,11 +9,18 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "bot:dev": "nodemon --exec ts-node src/bot/index.ts",
+    "bot:build": "tsc -p tsconfig.json",
+    "bot:start": "node dist/bot/index.js",
+    "test:local": "ts-node src/bot/test.ts",
+    "test:local:build": "npm run build && npm run test:local"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "telegraf": "^4.15.3",
+    "dotenv": "^16.4.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -22,6 +29,7 @@
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "undici-types": "^5.0.0"
+    "undici-types": "^5.0.0",
+    "ngrok": "^5.0.0"
   }
-} 
+}
