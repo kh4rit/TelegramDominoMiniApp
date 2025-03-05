@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 public/client.js
 public/client.js.map
+deploy/
 
 # Environment variables
 .env

@@ -6,10 +6,9 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon",
-    "build": "npm run build:server && npm run build:client && npm run prepare:pages",
+    "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
-    "prepare:pages": "cp public/index.html public/client.js public/",
     "watch": "tsc -w"
   },
   "dependencies": {

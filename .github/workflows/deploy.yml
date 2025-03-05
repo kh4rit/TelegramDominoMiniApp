@@ -39,10 +39,19 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Create deployment directory
+        run: mkdir -p deploy
+
+      - name: Copy static files
+        run: |
+          cp public/index.html deploy/
+          cp public/client.js deploy/
+          cp public/client.js.map deploy/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './public'
+          path: './deploy'
 
   deploy:
     environment:
