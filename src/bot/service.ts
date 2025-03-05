@@ -5,44 +5,119 @@ export class BotService {
   private bot: Telegraf<BotContext>;
   private gameSessions: Map<number, GameSession>;
   private webAppUrl: string;
+  private maxRetries = 3;
+  private retryDelay = 1000; // 1 second
 
   constructor(config: BotConfig) {
     this.bot = new Telegraf<BotContext>(config.token);
     this.gameSessions = new Map();
     this.webAppUrl = config.webAppUrl;
-    this.setupHandlers();
+  }
+
+  private async testBotToken(token: string): Promise<boolean> {
+    try {
+      console.log('Testing bot token...');
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        console.log('Bot token test successful:', {
+          id: data.result.id,
+          username: data.result.username,
+          is_bot: data.result.is_bot
+        });
+        return true;
+      } else {
+        console.error('Bot token test failed:', data);
+        return false;
+      }
+    } catch (error) {
+      console.error('Bot token test error:', error);
+      return false;
+    }
   }
 
   private setupHandlers(): void {
+    console.log('Setting up bot handlers...');
+
+    // Error handler
+    this.bot.catch((err, ctx) => {
+      console.error('Bot error:', err);
+      if (ctx) {
+        ctx.reply('An error occurred. Please try again.').catch(console.error);
+      }
+    });
+
+    // Debug middleware to log all updates - moved to top for earliest logging
+    this.bot.use(async (ctx, next) => {
+      console.log('Received update:', {
+        type: ctx.updateType,
+        chat: ctx.chat?.id,
+        from: ctx.from?.id,
+        update: ctx.update,
+        message: ctx.message,
+        webAppUrl: this.webAppUrl // Log the webAppUrl to verify it's set
+      });
+      await next();
+    });
+
     // Start command handler
     this.bot.command('start', async (ctx) => {
-      const response = await this.handleStartCommand(ctx);
-      if (!response.success) {
-        await ctx.reply(response.error || 'Failed to start the game');
-        return;
-      }
+      console.log('Received /start command from:', {
+        chatId: ctx.chat?.id,
+        userId: ctx.from?.id,
+        username: ctx.from?.username
+      });
       
-      const gameSession = response.gameSession;
-      if (!gameSession) return;
-
-      await ctx.reply(
-        'Welcome to Domino! 🎲\n\n' +
-        'Click the button below to join the game:',
-        {
-          reply_markup: {
-            inline_keyboard: [[
-              {
-                text: '🎮 Join Game',
-                web_app: { url: this.webAppUrl }
-              }
-            ]]
-          }
+      try {
+        const response = await this.handleStartCommand(ctx);
+        console.log('Start command response:', response);
+        
+        if (!response.success) {
+          console.error('Start command failed:', response.error);
+          await ctx.reply(response.error || 'Failed to start the game');
+          return;
         }
-      );
+        
+        const gameSession = response.gameSession;
+        if (!gameSession) {
+          console.error('No game session created');
+          await ctx.reply('Failed to create game session');
+          return;
+        }
+
+        console.log('Sending welcome message with game button...', {
+          webAppUrl: this.webAppUrl,
+          chatId: ctx.chat?.id
+        });
+
+        const message = await ctx.reply(
+          'Welcome to Domino! 🎲\n\n' +
+          'Click the button below to join the game:',
+          {
+            reply_markup: {
+              inline_keyboard: [[
+                {
+                  text: '🎮 Join Game',
+                  web_app: { url: this.webAppUrl }
+                }
+              ]]
+            }
+          }
+        );
+        console.log('Welcome message sent successfully:', {
+          messageId: message.message_id,
+          chatId: message.chat.id
+        });
+      } catch (error) {
+        console.error('Error in start command:', error);
+        await ctx.reply('Failed to start the game. Please try again.');
+      }
     });
 
     // Handle web app data
     this.bot.on('web_app_data', async (ctx) => {
+      console.log('Received web app data');
       const data = ctx.message.web_app_data.data;
       try {
         const webAppData = JSON.parse(data);
@@ -52,6 +127,21 @@ export class BotService {
         await ctx.reply('Error processing game data');
       }
     });
+
+    console.log('Bot handlers set up successfully');
+  }
+
+  private async retryOperation<T>(operation: () => Promise<T>, retries = this.maxRetries): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (retries > 0) {
+        console.log(`Retrying operation. Attempts remaining: ${retries - 1}`);
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        return this.retryOperation(operation, retries - 1);
+      }
+      throw error;
+    }
   }
 
   private async handleStartCommand(ctx: BotContext): Promise<StartCommandResponse> {
@@ -159,16 +249,38 @@ export class BotService {
   }
 
   public async start(): Promise<void> {
-    try {
-      await this.bot.launch();
-      console.log('Bot started successfully');
-    } catch (error) {
-      console.error('Error starting bot:', error);
-      throw error;
-    }
+    return this.retryOperation(async () => {
+      try {
+        // Test bot token first
+        const token = (this.bot.telegram as any).token;
+        const tokenValid = await this.testBotToken(token);
+        
+        if (!tokenValid) {
+          throw new Error('Bot token validation failed');
+        }
+
+        // Set up handlers after token validation
+        this.setupHandlers();
+
+        console.log('Starting bot...');
+        await this.bot.launch();
+        console.log('Bot started successfully');
+      } catch (error: any) {
+        console.error('Error starting bot:', error);
+        if (error.response?.error_code === 404) {
+          console.error('Bot token appears to be invalid or bot was not found');
+          console.error('Please check:');
+          console.error('1. Token format (should be numbers:letters/numbers)');
+          console.error('2. Token is copied correctly from BotFather');
+          console.error('3. Bot has not been deleted');
+          console.error('4. No extra spaces or characters in the token');
+        }
+        throw error;
+      }
+    });
   }
 
   public stop(): void {
-    this.bot.stop();
+    this.bot.stop('SIGINT');
   }
 } 

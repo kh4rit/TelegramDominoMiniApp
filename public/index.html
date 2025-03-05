@@ -1,61 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Telegram Domino</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      background-color: var(--tg-theme-bg-color, #fff);
-      color: var(--tg-theme-text-color, #000);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domino Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            color: var(--tg-theme-text-color, #000000);
+            background: var(--tg-theme-bg-color, #ffffff);
+        }
 
-    .container {
-      text-align: center;
-      max-width: 600px;
-      width: 100%;
-    }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 30px;
-      font-weight: 600;
-    }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--tg-theme-text-color, #000000);
+        }
 
-    .join-button {
-      background-color: var(--tg-theme-button-color, #2481cc);
-      color: var(--tg-theme-button-text-color, #fff);
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: opacity 0.2s ease;
-    }
+        .join-button {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
 
-    .join-button:hover {
-      opacity: 0.9;
-    }
+        .join-button:hover {
+            opacity: 0.8;
+        }
 
-    .join-button:active {
-      opacity: 0.7;
-    }
-  </style>
+        .join-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Telegram Domino App</h1>
-    <button class="join-button">Join Game</button>
-  </div>
-  <script src="client.js"></script>
+    <div class="container">
+        <h1>Domino Game</h1>
+        <button class="join-button">Join Game</button>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        
+        // Enable closing confirmation
+        tg.enableClosingConfirmation();
+
+        // Initialize the WebApp
+        tg.ready();
+
+        // Set the main button as visible
+        tg.MainButton.setParams({
+            text: 'Join Game'
+        });
+
+        // Get the join button
+        const joinButton = document.querySelector('.join-button');
+
+        // Function to handle joining the game
+        async function joinGame() {
+            const userId = tg.initDataUnsafe?.user?.id;
+            const chatId = tg.initDataUnsafe?.chat?.id;
+            
+            if (!userId || !chatId) {
+                tg.showAlert('Error: Could not identify user or chat');
+                return;
+            }
+
+            // Show loading state
+            joinButton.disabled = true;
+            joinButton.textContent = 'Joining...';
+
+            try {
+                const response = await fetch('/api/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, chatId })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to join game');
+                }
+
+                // Show success message
+                tg.showAlert(`Successfully joined! Players in game: ${data.playerCount}`);
+
+                // Update button state
+                joinButton.textContent = 'Joined ✓';
+                joinButton.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, #e6e6e6)';
+            } catch (error) {
+                // Show error message
+                tg.showAlert(`Error: ${error.message}`);
+
+                // Reset button state
+                joinButton.disabled = false;
+                joinButton.textContent = 'Join Game';
+            }
+        }
+
+        // Add click handlers
+        joinButton.addEventListener('click', joinGame);
+        tg.MainButton.onClick(joinGame);
+    </script>
 </body>
 </html> 

@@ -1,4 +1,4 @@
-import { Context, Telegraf } from 'telegraf';
+import { Context } from 'telegraf';
 
 export interface BotConfig {
   token: string;
@@ -13,14 +13,12 @@ export interface GameSession {
   updatedAt: Date;
 }
 
-export interface BotContext extends Context {
-  gameSession?: GameSession;
-}
-
-export type BotInstance = Telegraf<BotContext>;
-
 export interface StartCommandResponse {
   success: boolean;
   error?: string;
+  gameSession?: GameSession;
+}
+
+export interface BotContext extends Context {
   gameSession?: GameSession;
 } 

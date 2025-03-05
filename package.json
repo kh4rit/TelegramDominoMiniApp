@@ -12,7 +12,7 @@
     "watch": "tsc -w",
     "bot:dev": "nodemon --exec ts-node src/bot/index.ts",
     "bot:build": "tsc -p tsconfig.json",
-    "bot:start": "node dist/bot/index.js",
+    "bot:start": "npm run build && node dist/bot/index.js",
     "test:local": "ts-node src/bot/test.ts",
     "test:local:build": "npm run build && npm run test:local"
   },
@@ -29,7 +29,6 @@
     "nodemon": "^3.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "undici-types": "^5.0.0",
-    "ngrok": "^4.3.1"
+    "undici-types": "^5.0.0"
   }
 }
