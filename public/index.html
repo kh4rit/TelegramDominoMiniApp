@@ -35,6 +35,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: opacity 0.2s;
+            margin: 20px 0;
         }
 
         .join-button:hover {
@@ -50,74 +51,42 @@
 <body>
     <div class="container">
         <h1>Domino Game</h1>
-        <button class="join-button">Join Game</button>
+        <button class="join-button" onclick="joinGame()">Join Game</button>
     </div>
 
     <script>
         // Initialize Telegram WebApp
         const tg = window.Telegram.WebApp;
         
-        // Enable closing confirmation
-        tg.enableClosingConfirmation();
-
         // Initialize the WebApp
         tg.ready();
 
-        // Set the main button as visible
+        // Enable closing confirmation
+        tg.enableClosingConfirmation();
+
+        // Set main button params
         tg.MainButton.setParams({
-            text: 'Join Game'
+            text: 'Join Game',
+            is_visible: true
         });
 
-        // Get the join button
-        const joinButton = document.querySelector('.join-button');
-
         // Function to handle joining the game
-        async function joinGame() {
-            const userId = tg.initDataUnsafe?.user?.id;
-            const chatId = tg.initDataUnsafe?.chat?.id;
-            
-            if (!userId || !chatId) {
-                tg.showAlert('Error: Could not identify user or chat');
-                return;
-            }
-
-            // Show loading state
-            joinButton.disabled = true;
-            joinButton.textContent = 'Joining...';
-
+        function joinGame() {
             try {
-                const response = await fetch('/api/join', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ userId, chatId })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to join game');
-                }
-
-                // Show success message
-                tg.showAlert(`Successfully joined! Players in game: ${data.playerCount}`);
-
-                // Update button state
-                joinButton.textContent = 'Joined ✓';
-                joinButton.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, #e6e6e6)';
+                // Send simple join action back to bot
+                tg.sendData('join');
+                
+                // Close the WebApp
+                setTimeout(() => {
+                    tg.close();
+                }, 1000);
             } catch (error) {
-                // Show error message
-                tg.showAlert(`Error: ${error.message}`);
-
-                // Reset button state
-                joinButton.disabled = false;
-                joinButton.textContent = 'Join Game';
+                console.error('Error joining game:', error);
+                alert('Failed to join game. Please try again.');
             }
         }
 
-        // Add click handlers
-        joinButton.addEventListener('click', joinGame);
+        // Handle main button click
         tg.MainButton.onClick(joinGame);
     </script>
 </body>

@@ -75,23 +75,38 @@ export class BotService {
       }
     });
 
-    // Add a simple echo handler to test if bot is receiving messages
-    this.bot.on('text', async (ctx) => {
-      if (ctx.message.text !== '/start') {
-        await ctx.reply('I received your message: ' + ctx.message.text);
+    // Handle web app data
+    this.bot.on('web_app_data', async (ctx) => {
+      try {
+        if (!ctx.message?.web_app_data?.data) {
+          await ctx.reply('Error: No web app data received');
+          return;
+        }
+
+        const data = ctx.message.web_app_data.data;
+        
+        if (data !== 'join') {
+          await ctx.reply('Error: Invalid action received');
+          return;
+        }
+
+        await this.handleJoinGame(ctx);
+      } catch (error) {
+        console.error('Error handling web app data:', error);
+        await ctx.reply('Error processing game data. Please try again.');
       }
     });
 
-    // Handle web app data
-    this.bot.on('web_app_data', async (ctx) => {
-      const data = ctx.message.web_app_data.data;
-      try {
-        const webAppData = JSON.parse(data);
-        await this.handleWebAppData(ctx, webAppData);
-      } catch (error) {
-        console.error('Error parsing web app data:', error);
-        await ctx.reply('Error processing game data');
+    // Add game status command
+    this.bot.command('status', async (ctx) => {
+      const chatId = ctx.chat?.id;
+      if (!chatId) {
+        await ctx.reply('Error: Could not identify chat');
+        return;
       }
+
+      const status = await this.getGameStatus(chatId);
+      await ctx.reply(status);
     });
   }
 
@@ -134,22 +149,34 @@ export class BotService {
     }
   }
 
-  private async handleWebAppData(ctx: BotContext, data: any): Promise<void> {
+  private async handleJoinGame(ctx: BotContext): Promise<void> {
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
     
     if (!chatId || !userId) {
-      await ctx.reply('Error: Could not identify chat or user');
+      await ctx.reply('Error: Could not identify user or chat');
       return;
     }
 
-    const gameSession = this.gameSessions.get(chatId);
+    let gameSession = this.gameSessions.get(chatId);
+    
+    // If no game session exists, create one
     if (!gameSession) {
-      await ctx.reply('Error: No active game session found');
+      gameSession = {
+        chatId,
+        players: new Map(),
+        maxPlayers: 4
+      };
+      this.gameSessions.set(chatId, gameSession);
+    }
+
+    // Check if game is full
+    if (gameSession.players.size >= gameSession.maxPlayers) {
+      await ctx.reply('Error: Game is full');
       return;
     }
 
-    // Add player to the game
+    // Add player to the game if not already in
     if (!gameSession.players.has(userId)) {
       gameSession.players.set(userId, {
         id: userId,
@@ -157,8 +184,34 @@ export class BotService {
         score: 0
       });
 
-      await ctx.reply(`Welcome to the game, ${ctx.from?.first_name}! Players: ${gameSession.players.size}/${gameSession.maxPlayers}`);
+      const playerList = Array.from(gameSession.players.values())
+        .map(p => p.name)
+        .join(', ');
+
+      await ctx.reply(
+        `${ctx.from?.first_name} joined the game!\n\n` +
+        `Current players (${gameSession.players.size}/${gameSession.maxPlayers}):\n` +
+        playerList
+      );
+    } else {
+      await ctx.reply('You are already in the game!');
     }
+  }
+
+  private async getGameStatus(chatId: number): Promise<string> {
+    const gameSession = this.gameSessions.get(chatId);
+    
+    if (!gameSession) {
+      return 'No active game in this chat. Start a new game with /start';
+    }
+
+    const playerList = Array.from(gameSession.players.values())
+      .map(p => p.name)
+      .join(', ');
+
+    return `Current game status:\n` +
+           `Players (${gameSession.players.size}/${gameSession.maxPlayers}):\n` +
+           playerList;
   }
 
   public async start(): Promise<void> {
