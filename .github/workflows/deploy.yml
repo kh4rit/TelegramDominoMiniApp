@@ -44,9 +44,31 @@ jobs:
 
       - name: Copy static files
         run: |
+          # Copy required files
+          if [ ! -f "public/index.html" ]; then
+            echo "Error: index.html not found"
+            exit 1
+          fi
+          if [ ! -f "public/client.js" ]; then
+            echo "Error: client.js not found"
+            exit 1
+          fi
           cp public/index.html deploy/
           cp public/client.js deploy/
-          cp public/client.js.map deploy/
+          
+          # Copy optional files if they exist
+          if [ -f "public/client.js.map" ]; then
+            cp public/client.js.map deploy/
+          fi
+
+      - name: Verify deployment files
+        run: |
+          echo "Checking deployment files..."
+          ls -la deploy/
+          if [ ! -f "deploy/index.html" ] || [ ! -f "deploy/client.js" ]; then
+            echo "Error: Required files are missing in deployment directory"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
