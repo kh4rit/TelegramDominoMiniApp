@@ -4,17 +4,17 @@
   "description": "Telegram Domino Mini App",
   "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "nodemon",
-    "build": "npm run build:server && npm run build:client",
+    "app:dev": "nodemon",
+    "app:build": "npm run build:server && npm run build:client",
+    "app:start": "node dist/server.js",
     "build:server": "tsc -p tsconfig.json",
     "build:client": "tsc -p tsconfig.client.json",
-    "watch": "tsc -w",
-    "bot:dev": "nodemon --exec ts-node src/bot/index.ts",
+    "bot:dev": "tsc -p tsconfig.json && ts-node src/bot/test.ts",
     "bot:build": "tsc -p tsconfig.json",
     "bot:start": "npm run build && node dist/bot/index.js",
-    "test:local": "ts-node src/bot/test.ts",
-    "test:local:build": "npm run build && npm run test:local"
+    "build": "npm run app:build",
+    "start": "npm run app:start",
+    "dev": "npm run app:dev"
   },
   "dependencies": {
     "express": "^4.18.2",
