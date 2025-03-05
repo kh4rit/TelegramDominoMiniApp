@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Domino</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: var(--tg-theme-bg-color, #fff);
+      color: var(--tg-theme-text-color, #000);
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+
+    .join-button {
+      background-color: var(--tg-theme-button-color, #2481cc);
+      color: var(--tg-theme-button-text-color, #fff);
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .join-button:hover {
+      opacity: 0.9;
+    }
+
+    .join-button:active {
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Telegram Domino App</h1>
+    <button class="join-button" onclick="joinGame()">Join Game</button>
+  </div>
+  
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram.WebApp;
+    
+    // Enable closing confirmation
+    tg.enableClosingConfirmation();
+
+    // Initialize the WebApp
+    tg.ready();
+
+    // Set the main button as visible
+    tg.MainButton.setParams({
+      text: 'Join Game'
+    });
+
+    function joinGame() {
+      const userId = tg.initDataUnsafe?.user?.id;
+      const chatId = tg.initDataUnsafe?.chat?.id;
+      
+      if (!userId || !chatId) {
+        tg.showAlert('Error: Could not identify user or chat');
+        return;
+      }
+
+      // Show loading state
+      const joinButton = document.querySelector('.join-button');
+      joinButton.disabled = true;
+      joinButton.textContent = 'Joining...';
+
+      // Make API call to join the game
+      fetch('/api/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, chatId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        // Show success message with player count
+        tg.showAlert(`Successfully joined! Players in game: ${data.playerCount}`);
+        
+        // Update button state
+        joinButton.textContent = 'Joined ✓';
+        joinButton.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, #e6e6e6)';
+      })
+      .catch(error => {
+        // Show error message
+        tg.showAlert('Error: ' + error.message);
+        
+        // Reset button state
+        joinButton.disabled = false;
+        joinButton.textContent = 'Join Game';
+      });
+    }
+
+    // Optional: Handle the main button click
+    tg.MainButton.onClick(joinGame);
+  </script>
+</body>
+</html>
