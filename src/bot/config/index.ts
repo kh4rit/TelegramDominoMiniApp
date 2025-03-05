@@ -21,7 +21,8 @@ interface Config {
 function validateConfig(): Config {
   const requiredEnvVars = [
     'BOT_TOKEN',
-    'NGROK_AUTH_TOKEN'
+    'NGROK_AUTH_TOKEN',
+    'WEB_APP_URL'
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -32,7 +33,7 @@ function validateConfig(): Config {
   return {
     bot: {
       token: process.env.BOT_TOKEN!,
-      webAppUrl: 'https://kh4rit.github.io/TelegramDominoMiniApp'
+      webAppUrl: process.env.WEB_APP_URL!
     },
     server: {
       port: parseInt(process.env.PORT || '3000', 10)

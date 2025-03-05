@@ -5,7 +5,7 @@ import { ServerService } from './services/server';
 
 async function main() {
   try {
-    // Create bot service
+    // Create bot service with initial config
     const botService = new BotService({
       token: config.bot.token,
       webAppUrl: config.bot.webAppUrl
@@ -17,7 +17,14 @@ async function main() {
 
     // Start ngrok tunnel
     const ngrokService = NgrokService.getInstance();
-    await ngrokService.startTunnel();
+    const ngrokUrl = await ngrokService.startTunnel();
+    
+    // In development mode, update the web app URL to use ngrok
+    if (process.env.NODE_ENV === 'development') {
+      // Update the bot service with the ngrok URL
+      botService.updateWebAppUrl(ngrokUrl);
+      console.log(`\n🌐 Web App URL updated to: ${ngrokUrl}`);
+    }
 
     // Start the bot
     await botService.start();

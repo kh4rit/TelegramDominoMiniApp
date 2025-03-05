@@ -19,6 +19,11 @@ export class BotService {
     return this.bot.handleUpdate(update);
   }
 
+  public updateWebAppUrl(url: string): void {
+    this.webAppUrl = url;
+    console.log(`Bot web app URL updated to: ${url}`);
+  }
+
   private async testBotToken(token: string): Promise<boolean> {
     try {
       const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
